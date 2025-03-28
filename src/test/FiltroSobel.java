@@ -16,8 +16,7 @@ public class FiltroSobel {
       for (int i = 1; i < alto - 1; i++) {
           for (int j = 1; j < ancho - 1; j++) {
               // Simular accesos a pixeles y filtros
-              // En Opción 1: registrar referencias en lugar de calcular
-              // En implementación real: aplicar convolución
+              // En Opción 1: registrar referencias en lugar de calcula
           }
       }
   }
