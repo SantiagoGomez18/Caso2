@@ -73,4 +73,6 @@ public class Imagen {
             fos.close();
         } catch (IOException e) { e.printStackTrace(); }
     }
+
+    
 }

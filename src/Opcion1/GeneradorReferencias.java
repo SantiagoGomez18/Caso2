@@ -14,7 +14,11 @@ public class GeneradorReferencias {
         this.tamanoPagina = tamanoPagina;
     }
 
-    
+    public String generarReferencia(){
+        int tp = tamanoPagina;
+        int alto = imagen.alto;
+        int ancho = imagen.ancho;
 
-
+        return "A";  
+    }
 }
