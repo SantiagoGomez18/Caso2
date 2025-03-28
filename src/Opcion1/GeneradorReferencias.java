@@ -4,12 +4,17 @@ import Opcion1.FiltroSobel;
 
 public class GeneradorReferencias {
     Imagen imagen;
-    FiltroSobel filtroSobel;
+    FiltroSobel filtro;
+    int tamanoPagina;
+    String nombreArchivo;
 
-    public GeneradorReferencias(Imagen imagen) {
-        this.imagen = imagen;
-        
+    public GeneradorReferencias(int tamanoPagina, String nombreArchivo) {
+        this.imagen = new Imagen(nombreArchivo);
+        this.filtro = new FiltroSobel(imagen, new Imagen("output.bmp")); 
+        this.tamanoPagina = tamanoPagina;
     }
+
+    
 
 
 }
