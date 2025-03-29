@@ -1,85 +1,86 @@
 package Opcion1;
-
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import Opcion1.Imagen;
+import Opcion1.FiltroSobel;
 
 public class GeneradorReferencias {
-    private Imagen imagenIn;
-    private Imagen imagenOut;
+    Imagen imagen;
+    Imagen imagenOut;
+    int tamanoPagina;
+    String nombreArchivo;
 
-    public GeneradorReferencias(Imagen imagenIn, Imagen imagenOut) {
-        this.imagenIn = imagenIn;
-        this.imagenOut = imagenOut;
+    // Sobel Kernels para detección de bordes
+    static final int[][] SOBEL_X = {
+        {-1, 0, 1},
+        {-2, 0, 2},
+        {-1, 0, 1}
+    };
+    static final int[][] SOBEL_Y = {
+        {-1, -2, -1},
+        { 0, 0, 0},
+        { 1, 2, 1}
+    };
+
+    public GeneradorReferencias(int tamanoPagina, String nombreArchivo) {
+        this.imagen = new Imagen(nombreArchivo);
+        this.tamanoPagina = tamanoPagina;
+        this.imagenOut = new Imagen("");
     }
 
-    public void generateReferences(int pageSize, String outputFile) throws IOException {
-        int alto = imagenIn.alto;
-        int ancho = imagenIn.ancho;
-        long sizeImagen = (long) alto * ancho * 3; // Size of imagenIn or imagenOut in bytes
-        long startImagenIn = 0;
-        long startSOBEL_X = startImagenIn + sizeImagen;
-        long startSOBEL_Y = startSOBEL_X + 36; // 3x3 int array = 9 * 4 bytes
-        long startImagenOut = startSOBEL_Y + 36;
-        long totalSize = startImagenOut + sizeImagen;
-        long NR = (alto - 2) * (ancho - 2) * 84L; // 84 references per pixel
-        int NP = (int) ((totalSize + pageSize - 1) / pageSize); // Ceiling division
+    public String generarReferencia(){
+        ;
+        //Recorrer la imagen aplicando los dos filtros de Sobel
+        for (int i=1; i<imagen.alto-1; i++){
+            for (int j=1; j < imagen.ancho-1; j++){
+                int gradXRed = 0, gradXGreen = 0, gradXBlue = 0;
+                int gradYRed = 0, gradYGreen = 0, gradYBlue = 0;
+                // Aplicar las máscaras Sobel X y Y
+                for (int ki = -1; ki <= 1; ki++) {
+                    for (int kj = -1; kj <= 1; kj++) {
+                        int red = imagen.imagen[i+ki][j+kj][0];
+                        int green = imagen.imagen[i+ki][j+kj][1];
+                        int blue = imagen.imagen[i+ki][j+kj][2];
+                        for(int s=0; s<3; s++){
+                            int fila = i+ki;
+                            int columna = j+kj;
+                            int off = (fila * imagen.ancho * 3) + (columna * 3) + s;
+                            int pagina = off / tamanoPagina;
+                            int desplazamiento = off % tamanoPagina;
 
-        try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile))) {
-            // Write metadata
-            writer.println("TP=" + pageSize);
-            writer.println("NF=" + alto);
-            writer.println("NC=" + ancho);
-            writer.println("NR=" + NR);
-            writer.println("NP=" + NP);
+                            if (s == 0) {
+                                System.out.println("IMAGEN[" + i + "][" + j + "].r,"  + pagina + "," + desplazamiento + ",R");      
+                                gradXRed += red * SOBEL_X[ki + 1][kj + 1];
+                                gradYRed += red * SOBEL_Y[ki + 1][kj + 1];
+                            } else if (s == 1) {
+                                System.out.println("IMAGEN[" + i + "][" + j + "].g,"  + pagina + "," + desplazamiento + ",R");
+                                gradXGreen += green * SOBEL_X[ki + 1][kj + 1];
+                                gradYGreen += green * SOBEL_Y[ki + 1][kj + 1];
+                            } else if (s == 2) {
+                                System.out.println("IMAGEN[" + i + "][" + j + "].b,"  + pagina + "," + desplazamiento + ",R");
+                                gradXBlue += blue * SOBEL_X[ki + 1][kj + 1];
+                                gradYBlue += blue * SOBEL_Y[ki + 1][kj + 1];
+                            }
 
-            // Simulate memory accesses
-            for (int i = 1; i < alto - 1; i++) {
-                for (int j = 1; j < ancho - 1; j++) {
-                    for (int ki = -1; ki <= 1; ki++) {
-                        for (int kj = -1; kj <= 1; kj++) {
-                            // Reads from imagenIn
-                            int row = i + ki;
-                            int col = j + kj;
-                            for (int c = 0; c < 3; c++) {
-                                long addr = startImagenIn + (long) row * ancho * 3 + col * 3 + c;
-                                int page = (int) (addr / pageSize);
-                                int offset = (int) (addr % pageSize);
-                                String channel = (c == 0) ? "r" : (c == 1) ? "g" : "b";
-                                writer.println("Imagen[" + row + "][" + col + "]." + channel + ", " +
-                                               page + ", " + offset + ", R");
-                            }
-                            // Reads from SOBEL_X (3 times per ki, kj)
-                            int sobelRow = ki + 1;
-                            int sobelCol = kj + 1;
-                            long addrX = startSOBEL_X + (long) (sobelRow * 3 + sobelCol) * 4;
-                            int pageX = (int) (addrX / pageSize);
-                            int offsetX = (int) (addrX % pageSize);
-                            for (int k = 0; k < 3; k++) {
-                                writer.println("SOBEL_X[" + sobelRow + "][" + sobelCol + "], " +
-                                               pageX + ", " + offsetX + ", R");
-                            }
-                            // Reads from SOBEL_Y (3 times per ki, kj)
-                            long addrY = startSOBEL_Y + (long) (sobelRow * 3 + sobelCol) * 4;
-                            int pageY = (int) (addrY / pageSize);
-                            int offsetY = (int) (addrY % pageSize);
-                            for (int k = 0; k < 3; k++) {
-                                writer.println("SOBEL_Y[" + sobelRow + "][" + sobelCol + "], " +
-                                               pageY + ", " + offsetY + ", R");
-                            }
                         }
                     }
-                    // Writes to imagenOut
-                    for (int c = 0; c < 3; c++) {
-                        long addr = startImagenOut + (long) i * ancho * 3 + j * 3 + c;
-                        int page = (int) (addr / pageSize);
-                        int offset = (int) (addr % pageSize);
-                        String channel = (c == 0) ? "r" : (c == 1) ? "g" : "b";
-                        writer.println("Rta[" + i + "][" + j + "]." + channel + ", " +
-                                       page + ", " + offset + ", W");
-                    }
                 }
+                // Calcular la magnitud del gradiente
+                int red = Math.min(Math.max((int)Math.sqrt(gradXRed * gradXRed+
+                gradYRed * gradYRed),0),255);
+                int green = Math.min(Math.max((int)Math.sqrt(gradXGreen * gradXGreen +
+                gradYGreen* gradYGreen),0),255);
+                int blue = Math.min(Math.max((int) Math.sqrt(gradXBlue * gradXBlue +
+                gradYBlue * gradYBlue),0),255);
+                // Crear el nuevo valor RGB
+                imagenOut.imagen[i][j][0] = (byte)red;
+                imagenOut.imagen[i][j][1] = (byte)green;
+                imagenOut.imagen[i][j][2] = (byte)blue;
+                System.out.println("RTA ["+i+"]["+j+"], r");
+                System.out.println("RTA ["+i+"]["+j+"], g");
+                System.out.println("RTA ["+i+"]["+j+"], b");
             }
         }
+        return "a";
     }
+
+    
 }

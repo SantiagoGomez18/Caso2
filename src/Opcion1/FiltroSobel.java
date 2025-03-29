@@ -55,6 +55,7 @@ public class FiltroSobel {
                 imagenOut.imagen[i][j][0] = (byte)red;
                 imagenOut.imagen[i][j][1] = (byte)green;
                 imagenOut.imagen[i][j][2] = (byte)blue;
+                
             }
         }
     }
